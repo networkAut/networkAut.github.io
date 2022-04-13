@@ -2,11 +2,10 @@
 layout: post
 toc: true
 title: "Zabbix discards item value"
-categories: junk
-tags: [markdown, css, html]
+categories: zabbix
+tags: [zabbix, snmp, overflow]
 author:
-  - Bart Simpson
-  - Nelson Mandela Muntz
+  - Heeseong
 ---
 
 Zabbix를 이용한 네트워크 장비 모니터링 중, Interface Traffic이 자주 수집이 안되는 증상이 나타남
