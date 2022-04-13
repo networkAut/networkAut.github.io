@@ -4,4 +4,4 @@ title: About
 permalink: /about/
 ---
 
-Another minimal style of Jekyll theme for writers.
+실력있는 DevOps로 성장하고 싶은 주니어의 몸부림의 장입니다.
