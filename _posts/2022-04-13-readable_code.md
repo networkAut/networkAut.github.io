@@ -358,7 +358,7 @@ if username == "root"
 ...
 ```
 
-### 요약 뱐수
+### 요약 변수
 
 
 ``` java
@@ -391,3 +391,106 @@ if (!(file_exists && !is_protected)) Error("...");
 ``` java
 if(!file_exists || is_protected) Error("...");
 ```
+
+### Short-circuit logic 오용 말기
+> 나중에 다른 사람이 읽으면 그런 코드가 종종 혼란을 초래함
+
+``` java
+assert((!(bucket = FindBucket(key))) || !bucket->IsOccupied());
+```
+
+``` java
+bucket = FindBucket(key);
+if (bucket != NULL) assert(!bucket->IsOccupied());
+```
+
+
+### 복잡한 논리와 씨름하기
+
+``` java
+bool Range::OverlapsWith(Range other){
+// 다른 범위와 곂치는지 검사
+return (begin >= other.begin && begin < other.end) ||
+  (end > other.begin && end <= other.end) ||
+  (begin <= other.begin && end >= other.end); 
+}
+```
+
+* 우아한 해결법
+
+``` java
+bool Range::OverlapsWith(Range other){
+  if (other.end <= begin) return false; // 우리가 시작하기 전에 끝난다. 
+  if (other.begin >= end) return false; // 우리가 끝난 후에 시작한다.
+
+  return true; // 마지막 가능성만 남았다. 즉 겹친다. 
+}
+```
+
+
+## 변수와 가독성
+* 변수의 수가 많을수록 기억하고 다루기 더 여려워진다.
+* 변수의 범위가 넓어질 수록 기억하고 다루는 시간이 더 길어진다.
+* 변수값이 자주 바뀔수록 현재값을 기억하고 다루기가 더 어려워진다.
+
+
+
+### 변수 제거하기
+불필요한 임시 변수
+
+``` python
+now = datetime.datetime.now()
+root_message.last_view_time = now
+```
+
+### 변수의 범위를 좁혀라
+> 변수가 적용되는 범위를 최대한 좁게 만들어라
+
+
+``` java
+class LargeClass {
+  string srt_;
+
+  void Method1() {
+    str_ = ...;
+    Method2();
+  }
+
+  void Method2() {
+    // str_ 변수 사용하기
+  }
+
+  // str_ 을 사용하지 않는 다른 메소드..
+};
+```
+
+
+개선
+
+```java
+class LargeClass {
+  void Method1() {
+    string str = ...;
+
+    Method2(str);
+  }
+
+  void Method2(string str) {
+    // str 변수 사용
+  }
+};
+```
+
+* 커다란 클래스를 여러 작은 클래스로
+  * 작은 클래스끼리 서로의 멤버를 참조하면 나눈 효과가 없음
+
+## 한번에 하나씩
+> 한 번에 하나의 작업만 수행하게 코드를 구성해야 한다.
+
+
+## 코드 분량 줄이기
+* 요구사항을 다시 생각해서, 가장 단순한 형태의 문제를 찾아본다.
+* 주기적으로 라이브러리 전체 API를 훑어봄으로써 표준 라이브러리에 친숙해진다.
+
+예, json-simple
+JSONObject를 HashMap으로 변경하는 작업을 종종하는데 쓸데없는 짓
