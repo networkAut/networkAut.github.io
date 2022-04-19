@@ -4,7 +4,8 @@ toc: true
 title: Python Cleancode - 3
 categories: Python
 tags: [Python, OOP, Cleancode]
-author: - Heeseong
+author: 
+    - Heeseong
 ---
 
 

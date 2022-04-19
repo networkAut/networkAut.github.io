@@ -4,8 +4,8 @@ toc: true
 title: Python Cleancode - 2
 categories: Python
 tags: [Python, OOP, Cleancode]
-author:
-  - Heeseong
+author: 
+    - Heeseong
 ---
 
 Docstring과 어노테이션
