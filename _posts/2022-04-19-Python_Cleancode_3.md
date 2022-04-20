@@ -392,10 +392,180 @@ class Grid:
         return coord in self.limits
 ```
 
-* 구성이 간단하고, 위임을 통해 문제를 해결. 두 객체 모두 최소한의 논리를 사용했고, 메서드는 으집력이 있음
+* 구성이 간단하고, 위임을 통해 문제를 해결. 두 객체 모두 최소한의 논리를 사용했고, 메서드는 응집력이 있음
 
 ``` python
 def mark_coordinate(grid, coord):
     if coord in grid:
         grid[coord] = MARKED
 ```
+
+
+## 객체의 동적인 속성
+* f-string - 잠시 다른 이야기
+    * python 3.6 부터 지원
+    * f"string {varable}" 로 사용, %-formatting, string.format() 보다 가독성 좋고 편리함
+
+``` python
+# Use f-string
+
+x = 10 y = 3 f'x + y = {x+y} | x * y = {x*y}' 
+# >>> 'x + y = 13 | x * y = 30'
+
+
+# Use %-formatting 
+'x + y = %d | x * y = %d' %(x+y, x*y) 
+# >>> 'x + y = 13 | x * y = 30' 
+
+# Use str.format() 
+'x + y = {} | x * y = {}'.format(x+y, x*y) 
+# >>> 'x + y = 13 | x * y = 30'
+
+```
+
+* `__getattr__` 매직 메서드를 사용해 객체에서 속성을 얻는 방법을 제어할 수 있음
+* 객체의 속성을 호출하는 과정은 아래와 같음
+    1. myobject.myattribute 를 호출하면 파이썬은 객체의 사전에서 myattribute를 찾아서 `__getattribute__` 를 호출
+    2. 객체에 찾고 있는 속성이 없는 경우 속성의 이름을 파라미터로 전달하여 `__getattr__` 추가 메서드 호출됨
+    3. `__getattr__` 이용하여 반환 값 제어할 수 있음. 새로운 속성 만드는 것도 가능
+
+``` python
+class DynamicAttributes:
+    def __init__(self, attribute):
+        self.attribute = attribute
+
+    def __getattr__(self, attr):
+        if attr.startswith("fallback_"):
+            name = attr.replace("fallback_", "")
+            return f"[fallback resolved] {name}"
+        raise AttributeError(f"{self.__class__.__name__}에는 {attr} 속성이 없음")
+
+
+dyn = DynamicAttributes("value")
+# value
+print(dyn.fallback_test)
+# [fallback resolved] test
+dyn.__dict__["fallback_new"] = "new value"
+print(dyn.fallback_new)
+# new value
+print(getattr(dyn, "something", "default"))
+# default
+```
+
+* 첫 번째 호출은 객체에 있는 속성을 요청하고 그 결과값 반환
+* 두 번째 방법은 객체에 없는 fallback_test이라는 메서드를 호출하기 때문에 __getattr__ 이 호출되어 값을 반환
+* 세 번째 방법은 fallback_new 라는 새로운 속성이 생성된 것이 흥미로움 !
+    * dyn.fallback_new = "new value" 실행한 것과 동일함
+    * __getattr__ 이 호출 되지 않은 것을 유의하자
+* 마지막 방법은 값을 찾을 수 없어서 에러 발생하고, default 값이 반환 된 것
+
+## 호출형(callable) 객체
+
+* 함수처럼 동작하는 객체를 정의하면 매우 편리하다.
+* 가장 흔한 사례는 데코레이터 만드는 것이지만, 추가로 매직 메서드 `__call__` 을 사용하는 방법도 있다.
+* `__call__` 을 사용하면 객체를 일반 함수처럼 호출할 수 있음
+    * 여기에 전달된 모든 파라미터는 `__call__` 메서드에 그대로 전달된다.
+
+> 객체를 이렇게 사용하는 주된 이점은, 객체에는 상태가 있기 때문에 함수 호출 사이에 정보를 저장할 수 있다는 점이다.
+
+> `object(*agrs, **kwargs)`와 같은 구문을 `object.__call__(*args, **kwargs)`로 변환한다.
+* **kwargs 는 dict 형태로 파라미터 값 저장함(key-value로 넣어준 파라미터만)
+
+``` python
+def name_and_age(**kwargs):
+	print(kwargs)
+    
+name_and_age(name="홍길동", age="50")
+
+### 출력값 ###
+{'age': '50', 'name': '홍길동'}
+```
+
+
+```python
+
+from collections import defaultdict
+
+class CallCount:
+    def __init__(self):
+        self._counts = defaultdict(int)
+
+    def __call__(self, argument):
+        self._counts[argument] += 1
+        return self._counts[argument]
+
+
+cc = CallCount()
+print(cc(1)) # 1
+print(cc(2)) # 1
+print(cc(1)) # 2
+print(cc(1)) # 3
+print(cc('something')) # 1
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
