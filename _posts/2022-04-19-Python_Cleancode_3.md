@@ -200,25 +200,32 @@ import re
 EMAIL_FORMAT = re.compile(r"[^@]+@[^@]+[^@]+")
 
 def is_valid_email(potentially_valid_email: str):
-    return re.match(EMAIL_FORMAT, potentailly_valid_email) is not None
+    return re.match(EMAIL_FORMAT, potentially_valid_email) is not None
 
 class User:
     def __init__(self, username):
         self.username = username
         self._email = None
 
-@property
-def email(self):
-    return self._email
 
-@email.setter
-def email(self, new_email):
-    if not is_valid_email(new_email):
-        raise ValueError(f"유효한 이메일이 아니므로 {new_email} 값을 사용할 수 없음")
-    self._email = new_email
+    @property
+    def email(self):
+        return self._email
+
+    @email.setter
+    def email(self, new_email):
+        if not is_valid_email(new_email):
+            raise ValueError(f"유효한 이메일이 아니므로 {new_email} 값을 사용할 수 없음.")
+        self._email = new_email
+
+user = User('heeseong')
+user.email # None --- getter
+user.email = 'heeseong.shin@nhn.com' # --- setter
+user.email # heeseong.shin@nhn.com --- getter
 ```
 
 * 첫번째 `@property` 메서드는 private 속성인 email 값을 반환한다. (getter)
+* get_email, set_email을 propery 데코레이러를 통해 간결하게 작성 가능
 * `@email.setter` 메서드는 setter
 * 프로퍼티는 명령-쿼리 분리 원칙을 지키기 좋은 방법임
 * 명명-쿼리 분리 원칙이란, 객체의 매서드는 상태 변환 혹은 상태 반환 둘 중 하나만 해야한다.
