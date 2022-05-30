@@ -77,3 +77,70 @@ class SystemMonitor:
 
 > 그러나 각 클래스가 딱 하나의 메서드를 가져야 한다는 것을 뜻하는 것은 아님에 주의하자.
 
+## 개방/페쇄 원칙
+* Open/Close Priciple
+* 모듈이 개방되어 있으면서도 폐쇄되어야 한다는 원칙이다.
+
+* 클래스를 디자인할 때는 유지보수가 쉽도록 캡슐화하여 확장에는 ````개방```` 수정에는 ````페쇄````
+
+* 새로운 요구사항이나 도메인 변화에 잘 적응하는 코드를 작성해야한다는 뜻이다.
+
+> 새로운 문제가 발생할 경우 새로운 것을 추가만 할 뿐 기존 코드는 그대로 유지해야 한다는 뜻이다.
+
+### 개방/페쇄 원칙을 따르지 않을 경우 유지보수의 어려움
+
+* 다른 시스템에서 발생하는 이벤트를 분류하는 기능
+  * 데이터는 사전형태로 저장, 로그, 쿼리로 이미 데이터 수집했다고 가정
+
+``` python
+class Event:
+    def __init__(self, raw_data):
+        self.raw_data = raw_data
+
+class UnknownEvent(Event):
+    """데이터만으로 식별할 수 없는 이벤트"""
+
+class LoginEvent(Event):
+    """로그인 사용자에 의한 이벤트"""
+
+
+class LogoutEvent(Event):
+    """로그아웃 사용자에 의한 이벤트"""
+
+class SystemMonitor:
+    """시스템에서 발생한 이벤트 분류"""
+
+    def __init__(self, event_data):
+        self.event_data = event_data
+
+    def identify_event(self):
+        if(self.event_data["before"]["session"] == 0 and self.event_data["after"]["session"] == 1):
+            return LoginEvent(self.event_data)
+        elif(self.event_data["before"]["session"] == 1 and self.event_data["after"]["session"] == 0):
+            return LogoutEvent(self.event_data)
+
+        return UnknownEvent(self.event_data)
+
+
+if __name__ == "__main__":
+    l1 = SystemMonitor({"before": {"session": 0}, "after": {"session": 1}})
+    print(l1.identify_event().__class__.__name__) # LoginEvent
+
+    l1 = SystemMonitor({"before": {"session": 1}, "after": {"session": 0}})
+    print(l1.identify_event().__class__.__name__) # LogoutEvent
+    
+    l1 = SystemMonitor({"before": {"session": 1}, "after": {"session": 1}})
+    print(l1.identify_event().__class__.__name__) # UnknownEvent
+
+```
+
+* 이벤트 유형의 계층 구조와 이를 구성하는 일부 비즈니스 로직을 명확하게 알 수 있다.
+* 이벤트를 식별할 수 없는 경우는 UnknownEvent를 반환한다. 이것은 None을 반환하는 대신 기본 로직을 가진 null 객체를 반환하는 패턴으로 다형성을 보장하기 위한 것임.
+
+* 문제점
+  1. 이벤트 유형을 결정하는 논리가 일체형으로 중앙 집중화 됨 - 이벤트 늘어날 수록 메서드도 커질 것
+  2. 같은 방법으로 이 메서드가 수정을 위해 닫히지 않았다는 것을 알 수 있음 - 이벤트에 따른 메서드 수정 필요
+
+
+### 확장성을 가진 이벤트 시스템으로 리팩토링
+
