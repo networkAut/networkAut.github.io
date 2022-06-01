@@ -144,3 +144,149 @@ if __name__ == "__main__":
 
 ### 확장성을 가진 이벤트 시스템으로 리팩토링
 
+* 이전 예제의 문제점은 SystemMonitor 클래스가 분류하려는 구체 클래스와 직접 상호 작용한다는 점
+* 추상화가 필요하다.
+
+* SystemMonitor 클래스를 추상적인 이벤트와 협력하도록 변경하고, 이벤트에 대응하는 개별 로직은 각 이벤트 클래스에 위임하는 것
+* 그런 다음 각각의 이벤트에 다형성을 가진 새로운 메서드를 추가해야함
+
+
+* @staticmethod 의미
+  * 데코레이터를 이용한 정적메소드
+  * self 인자를 받지 않음
+  * 유틸리티성 메소드를 생성할 때 사용
+  * 클래스 내의 다른 속성이나 함수에 의존하지 않기 때문에 유틸리티성 함수로 static하게 정의하는 것이 맞다고 판단
+  * self를 이용해서 클래스의 속성이나 함수를 사용하지 않는 경우... 즉, 의존성이 없는 경우 모두 staticmethod로 정의
+
+
+``` python
+class Event:
+    def __int__(self, raw_data):
+        self.raw_data = raw_data
+
+    @staticmethod
+    def meets_condition(event_data: dict):
+        return False
+
+class UnknownEvent(Event):
+    """데이터만으로 식별할 수 없는 이벤트"""
+
+class LoginEvent(Event):
+    @staticmethod
+    def meets_condition(event_data: dict):
+        return (
+            event_data["before"]["session"] == 0
+            and event_data["after"]["session"] == 1
+        )
+
+class LogoutEvent(Event):
+    @staticmethod
+    def meets_condition(event_data: dict):
+        return (
+            event_data["before"]["session"] == 1
+            and event_data["after"]["session"] == 0
+        )
+
+class SystemMonitor:
+    """시스템에서 발생한 이벤트 분류"""
+
+    def __init__(self, event_data):
+        self.event_data = event_data
+
+    def identify_event(self):
+        for event_cls in Event.__subclasses__():
+            try:
+                if event_cls.meets_condition(self.event_data):
+                    return event_cls(self.event_data)
+            except KeyError:
+                continue
+        return UnknownEvent(self.event_data)
+
+if __name__ == "__main__":
+    l1 = SystemMonitor({"before": {"session": 0}, "after": {"session": 1}}) # LoginEvent
+    l2 = SystemMonitor({"before": {"session": 1}, "after": {"session": 0}}) # LogoutEvent
+    l3 = SystemMonitor({"before": {"session": 1}, "after": {"session": 1}}) # UnknownEvent
+```
+
+* Event 클래스를 상속하는 분류를 위한 구체 클래스들에서 다형성을 구현할 수 있도록 @staticmethod로 meets_condition을 추상화
+* SystemMonitor의 indetify_event에서 Event 클래스를 상속한 서브 클래스들에 대해 `__subclasses__()`를 통해 loop를 돌며 각 분류를 체크
+
+> 분류 메서드는 이제 특정 이벤트 타입 대신 일반적인 인터페이스를 따르는 제네릭 이벤트와 동작한다. 이 인터페이스를 따르는 제네릭 들은 모두 meets_conditiond 메서드를 구현하여 다형성을 보장한다.
+
+* __subclasses__() 메서드를 사용해 이벤트 유형을 찾는 것이 주목하자. 이제 새로운 유형의 이벤트를 지원하려면 단지 Event 클래스를 상속 받아 비즈니스 로직에 따라 meets_condition() 메서드를 구현하기만 하면 된다.
+
+
+
+
+### 이벤트 시스템 확장
+* 새로운 요구사항이 생겨서 모니터링 중인 시스템의 사용자 트랜잭션에 대응하는 이벤트를 지원해야 한다고 가정하자
+* TransactionEvent라는 새로운 클래스를 추가하는 것만으로 기존 코드 잘 동작한다.
+
+
+``` python
+class Event:
+    def __int__(self, raw_data):
+        self.raw_data = raw_data
+
+    @staticmethod
+    def meets_condition(event_data: dict):
+        return False
+
+class UnknownEvent(Event):
+    """데이터만으로 식별할 수 없는 이벤트"""
+
+class LoginEvent(Event):
+    @staticmethod
+    def meets_condition(event_data: dict):
+        return (
+            event_data["before"]["session"] == 0
+            and event_data["after"]["session"] == 1
+        )
+
+class LogoutEvent(Event):
+    @staticmethod
+    def meets_condition(event_data: dict):
+        return (
+            event_data["before"]["session"] == 1
+            and event_data["after"]["session"] == 0
+        )
+
+class TransactionEvent(Event):
+    """시스템에서 발생한 트랜잭션 이벤트"""
+    @staticmethod
+    def meets_condition(event_data: dict):
+        return event_data["after"].get("transaction") is not None
+
+class SystemMonitor:
+    """시스템에서 발생한 이벤트 분류"""
+
+    def __init__(self, event_data):
+        self.event_data = event_data
+
+    def identify_event(self):
+        for event_cls in Event.__subclasses__():
+            try:
+                if event_cls.meets_condition(self.event_data):
+                    return event_cls()
+            except KeyError:
+                continue
+        return UnknownEvent()
+
+
+if __name__ == "__main__":
+    l1 = SystemMonitor({"before": {"session": 0}, "after": {"session": 1}}) # LoginEvent
+    l2 = SystemMonitor({"before": {"session": 1}, "after": {"session": 0}}) # LogoutEvent
+    l3 = SystemMonitor({"before": {"session": 1}, "after": {"session": 1}}) # UnknownEvent
+    l4 = SystemMonitor({"after": {"transaction": "Tx001"}}) # TransactionEvent
+```
+* 새 이벤트 추가 했지만 SystemMonitor.identify_event() 메서드는 전혀 수정하지 않은 것에 주목하자 !!
+* 새로운 유형의 이벤트에 대해서 폐쇄되어 있다.
+* 반대로 Event 클래스 필요할 때마다 새로운 유형의 이벤트를 추가할 수 있게 해준다. - 이벤트는 새로운 타입 확장에 대해 개방되어 있다고 말할 수 있다.
+
+> 이것이 바로 이 원칙의 진정한 본질이다. 도메인에 새로운 문제가 나타나도 기존 코드를 수정하지 않고 새 코드를 추가하기만 하면 된다.
+
+
+### OCP 최종 정리
+* 이 원칙은 다형성의 효과적인 사용과 밀접하게 관련되어 있다. 다형성을 따르는 형태의 계약을 만들고 모델을 쉽게 확장할 수 있는 일반적인 구조로 디자인 하는 것이다.
+
+* 코드를 변경하지 않고 기능을 확장하기 위해서는 보호하려는 추상화에 대해서 (여기서는 새로운 이벤트) 적절한 폐쇄를 해야 함.
