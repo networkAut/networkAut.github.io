@@ -326,16 +326,76 @@ Process finished with exit code 0
 
 
 
+## 데코레이터와 DRY 원칙
+* 데코레이터를 사용하는 가장 큰 장점은 여러 객체에 데코레이터를 적용하여 코드를 재사용할 수 있다는 것이다.
+* Don't Repeat Yourself
+* 신중하게 설계되지 않은 데코레이터는 코드의 복잡성을 증가시킨다.
+* 재사용이 많다는 것을 어떻게 알 수 있을까?
+    * 파이썬에서 특별한 기준은 없지만, 소프트웨어 공학에서 적용되는 원칙을 따를 수 있다.
+
+    1. 처음부터 데코레이터를 만들지 않는다. 패턴이 생기고 데코레이터에 대한 추상화가 명확해지면 그 때 리팩토링을 한다.
+    2. 데코레이터가 적어도 3회 이상 필요한 경우에만 구현한다.
+    3. 데코레이터 코드를 최소한으로 유지한다.
+
+
+## 데코레이터와 관심사의 분리
+
+* 너무나 중요해서 독자적인 세션으로 분리
+* 코드 재사용의 핵심은 응집력이 있는 컴포넌트를 만드는 것.
+    * 최소한의 책임을 가져서 오직 한 가지 일만 해야하며, 그 일을 잘 해야 한다.
+
+* 어떤 것을 의미하는지 예제를 보자. (특정 함수의 실해을 추적하는 데코레이터)
+
+
+``` python
+def traced_function_wrong(function):
+
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        print(f"{function} 함수 실행")
+        start_time = time.time()
+        result = function(*args, **kwargs)
+        print(f"함수 {function}의 실행시간: {time.time() - start_time}")
+        return result
+    return wrapped
+```
+
+
+* 이 데코레이터는 문제가 있다. 하나 이상의 작업을 수행
+* 호출된 것을 기록하고 실행하는데, 또 걸린 시간도 기록한다. -> 두 가지 책임을 실행하고 있다.
+* 이것은 좀 더 구체적이고 제한적인 책임을 지닌 더 작은 데코레이터로 분류되어야한다.
+
+
+``` python
+def log_execution(function):
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        print(f"{function} 함수 실행")
+        return function(*kwargs, **kwargs)
+    return wrapped
+
+def measure_time(function):
+    @wraps(function)
+    def wrapped(*args, **kwargs):
+        start_time = time.time()
+        result = function(*args, **kwargs)
+        print(f"함수 {function}의 실행시간: {time.time() - start_time}")
+        return result
+    return wrapped
+
+@measure_time
+@log_execution
+def operation():
+    ...
+```
+* 동일한 기능을 위와 같이 조합하여 달성할 수 있다.
+
+## 좋은 데코레이터 분석
 
 
 
-
-
-
-
-
-
-
+* 좋은 데코레이터를 만드는 방법에 대한 가이드라인을 확인해보자!
+* 
 
 
 
