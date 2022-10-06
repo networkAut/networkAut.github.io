@@ -101,6 +101,9 @@ Call: DescriptorClass.__get__(<__main__.ClientClass object at 0x109783160>, <cla
 True
 ```
 
+* ClientClass 인스턴스의 descriptor 속성에 접근해보면, DesciptorClass 인스턴스를 반환하는게 아니고 `__get__` 메서드의 반환 값을 사용한다는 것을 알 수 있다.
+
+
 * 이 예제에서는 클라이언트 자체를 그대로 반환했으므로 마지막 비교 문장은 True가 된다.
 * 이걸 시작으로 더 복잡한 추상화와 더 나은 데코레이터를 만들어 볼 것이다.
 * 디스크립터를 통해 완전히 새롭게 프로그렘의 제어 흐름을 변경할 수 있다.
